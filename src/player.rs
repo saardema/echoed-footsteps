@@ -1,12 +1,21 @@
 use crate::actions::Actions;
+use crate::config::*;
+use crate::environment::*;
 use crate::loading::TextureAssets;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy::sprite::collide_aabb::collide;
+use bevy::sprite::collide_aabb::Collision;
 
 pub struct PlayerPlugin;
 
 #[derive(Component)]
 pub struct Player;
+
+#[derive(Component)]
+pub struct PlayerControlled {
+    pub velocity: Vec3,
+}
 
 /// This plugin handles player related stuff like movement
 /// Player logic is only active during the State `GameState::Playing`
@@ -20,28 +29,83 @@ impl Plugin for PlayerPlugin {
 fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
     commands
         .spawn(SpriteBundle {
-            texture: textures.texture_bevy.clone(),
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
+            sprite: Sprite {
+                color: Color::GREEN,
+                custom_size: Some(Vec2::splat(UNIT)),
+                ..default()
+            },
+            transform: Transform::from_translation(Vec3::new(0., 0., 30.)),
             ..Default::default()
         })
-        .insert(Player);
+        .insert(Player)
+        .insert(PlayerControlled {
+            velocity: Vec3::ZERO,
+        });
 }
 
 fn move_player(
     time: Res<Time>,
     actions: Res<Actions>,
-    mut player_query: Query<&mut Transform, With<Player>>,
+    mut player_controlled_query: Query<(&mut Transform, &mut PlayerControlled)>,
+    wall_query: Query<(&Transform, &Wall), Without<PlayerControlled>>,
 ) {
-    if actions.player_movement.is_none() {
-        return;
+    let mut input = Vec3::ZERO;
+    let mut acceleration = DECELERATION;
+
+    if actions.player_movement.is_some() {
+        acceleration = ACCELERATION;
+        input = Vec3::new(
+            actions.player_movement.unwrap().x * SPEED * time.delta_seconds(),
+            actions.player_movement.unwrap().y * SPEED * time.delta_seconds(),
+            0.,
+        );
     }
-    let speed = 150.;
-    let movement = Vec3::new(
-        actions.player_movement.unwrap().x * speed * time.delta_seconds(),
-        actions.player_movement.unwrap().y * speed * time.delta_seconds(),
-        0.,
-    );
-    for mut player_transform in &mut player_query {
-        player_transform.translation += movement;
+
+    for (mut transform, mut player_controlled) in player_controlled_query.iter_mut() {
+        let velocity_difference = input - player_controlled.velocity;
+        player_controlled.velocity += velocity_difference * acceleration;
+
+        for (wall_transform, wall) in wall_query.iter() {
+            if let Some(collision) = collide(
+                transform.translation + player_controlled.velocity,
+                Vec2::splat(UNIT),
+                wall_transform.translation,
+                wall.size,
+            ) {
+                match collision {
+                    Collision::Left => {
+                        if player_controlled.velocity.x > 0. {
+                            player_controlled.velocity.x = (wall_transform.translation.x
+                                - wall.size.x / 2.)
+                                - (transform.translation.x + UNIT / 2.);
+                        }
+                    }
+                    Collision::Right => {
+                        if player_controlled.velocity.x < 0. {
+                            player_controlled.velocity.x = (wall.size.x / 2.
+                                + wall_transform.translation.x)
+                                - (transform.translation.x - UNIT / 2.);
+                        }
+                    }
+                    Collision::Top => {
+                        if player_controlled.velocity.y < 0. {
+                            player_controlled.velocity.y = (wall.size.y / 2.
+                                + wall_transform.translation.y)
+                                - (transform.translation.y - UNIT / 2.);
+                        }
+                    }
+                    Collision::Bottom => {
+                        if player_controlled.velocity.y > 0. {
+                            player_controlled.velocity.y = (wall_transform.translation.y
+                                - wall.size.y / 2.)
+                                - (transform.translation.y + UNIT / 2.);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        transform.translation += player_controlled.velocity;
     }
 }

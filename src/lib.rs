@@ -1,5 +1,8 @@
 mod actions;
 mod audio;
+mod config;
+mod enemy;
+mod environment;
 mod loading;
 mod menu;
 mod player;
@@ -14,6 +17,8 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+use enemy::EnemyPlugin;
+use environment::EnvironmentPlugin;
 
 // This example game uses States to separate logic
 // See https://bevy-cheatbook.github.io/programming/states.html
@@ -38,6 +43,8 @@ impl Plugin for GamePlugin {
             .add_plugin(MenuPlugin)
             .add_plugin(ActionsPlugin)
             .add_plugin(InternalAudioPlugin)
+            .add_plugin(EnemyPlugin)
+            .add_plugin(EnvironmentPlugin)
             .add_plugin(PlayerPlugin);
 
         #[cfg(debug_assertions)]
