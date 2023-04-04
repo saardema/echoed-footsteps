@@ -1,6 +1,7 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
+mod config;
+use crate::config::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
@@ -16,7 +17,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Bevy game".to_string(), // ToDo
-                resolution: (800., 600.).into(),
+                resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
                 canvas: Some("#bevy".to_owned()),
                 ..default()
             }),

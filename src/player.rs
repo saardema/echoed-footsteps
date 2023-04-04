@@ -22,8 +22,26 @@ pub struct PlayerControlled {
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
-            .add_system(move_player.in_set(OnUpdate(GameState::Playing)));
+            .add_systems((move_player, update_camera).in_set(OnUpdate(GameState::Playing)));
     }
+}
+
+fn update_camera(mut query: Query<&mut Transform, With<Camera>>) {
+    let mut transform = query.single_mut();
+
+    *transform = Transform {
+        translation: Vec3 {
+            x: 0.,
+            y: 0.,
+            z: 999.,
+        },
+        scale: Vec3 {
+            x: 0.7,
+            y: 0.7,
+            z: 1.,
+        },
+        ..default()
+    };
 }
 
 fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {

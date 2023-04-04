@@ -1,8 +1,10 @@
 use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
+use bevy_ecs_ldtk::prelude::*;
 use rand::Rng;
 
 use crate::config::*;
+use crate::loading::LdtkLevelAssets;
 use crate::GameState;
 
 pub struct EnvironmentPlugin;
@@ -14,8 +16,18 @@ pub struct Wall {
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn_walls.in_schedule(OnEnter(GameState::Playing)));
+        app.add_plugin(LdtkPlugin)
+            .insert_resource(LevelSelection::Index(0))
+            .add_system(setup_level.in_schedule(OnEnter(GameState::Playing)));
+        // .add_system(spawn_walls.in_schedule(OnEnter(GameState::Playing)));
     }
+}
+
+fn setup_level(mut commands: Commands, level_assets: Res<LdtkLevelAssets>) {
+    commands.spawn(LdtkWorldBundle {
+        ldtk_handle: level_assets.level01.clone(),
+        ..default()
+    });
 }
 
 fn spawn_walls(mut commands: Commands) {

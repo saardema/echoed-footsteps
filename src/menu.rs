@@ -9,6 +9,7 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ButtonColors>()
+            // .add_system(skip_menu.in_set(OnUpdate(GameState::Menu)));
             .add_system(setup_menu.in_schedule(OnEnter(GameState::Menu)))
             .add_system(click_play_button.in_set(OnUpdate(GameState::Menu)))
             .add_system(cleanup_menu.in_schedule(OnExit(GameState::Menu)));
@@ -58,6 +59,10 @@ fn setup_menu(
                 },
             ));
         });
+}
+
+fn skip_menu(mut state: ResMut<NextState<GameState>>) {
+    state.set(GameState::Playing);
 }
 
 fn click_play_button(

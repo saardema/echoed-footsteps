@@ -3,13 +3,14 @@ body, html {
 }
 
 body {
-    background: repeating-linear-gradient(
+    /* background: repeating-linear-gradient(
         135deg,
         black 0,
         black 2px,
         white 2px,
         white 20px
-    );
+    ); */
+    background: #444;
     margin: 0;
 }
 
@@ -25,4 +26,8 @@ body {
     background-color: white;
     width: 800px;
     height: 600px;
+}
+
+#bevy:focus-visible {
+    outline: none;
 }
