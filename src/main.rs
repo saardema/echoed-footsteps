@@ -1,7 +1,8 @@
 // disable console on windows for release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-mod config;
-use crate::config::*;
+pub const WINDOW_WIDTH: f32 = 1200.;
+pub const WINDOW_HEIGHT: f32 = 800.;
+
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy::winit::WinitWindows;
@@ -16,7 +17,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Bevy game".to_string(), // ToDo
+                title: "Echoed Footsteps".to_string(),
                 resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
                 canvas: Some("#bevy".to_owned()),
                 ..default()

@@ -1,10 +1,12 @@
 mod actions;
 mod audio;
+mod components;
 mod config;
 mod enemy;
 mod environment;
 mod loading;
 mod menu;
+mod physics;
 mod player;
 
 use crate::actions::ActionsPlugin;
@@ -19,6 +21,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use enemy::EnemyPlugin;
 use environment::EnvironmentPlugin;
+use physics::PhysicsPlugin;
 
 // This example game uses States to separate logic
 // See https://bevy-cheatbook.github.io/programming/states.html
@@ -45,7 +48,8 @@ impl Plugin for GamePlugin {
             .add_plugin(InternalAudioPlugin)
             .add_plugin(EnemyPlugin)
             .add_plugin(EnvironmentPlugin)
-            .add_plugin(PlayerPlugin);
+            .add_plugin(PlayerPlugin)
+            .add_plugin(PhysicsPlugin);
 
         #[cfg(debug_assertions)]
         {

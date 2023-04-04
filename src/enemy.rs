@@ -1,7 +1,6 @@
-use crate::actions::Actions;
+use crate::components::*;
 use crate::config::*;
-use crate::loading::TextureAssets;
-use crate::player::PlayerControlled;
+use crate::player::PlayerVelocityHistory;
 use crate::GameState;
 use bevy::prelude::*;
 use rand::Rng;
@@ -11,13 +10,17 @@ pub struct EnemyPlugin;
 #[derive(Component)]
 pub struct Enemy;
 
+#[derive(Component)]
+pub struct DelayedPlayerController;
+
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn_enemy.in_schedule(OnEnter(GameState::Playing)));
+        app.add_system(spawn_enemy.in_schedule(OnEnter(GameState::Playing)))
+            .add_system(update_enemy_velocity.in_set(OnUpdate(GameState::Playing)));
     }
 }
 
-fn spawn_enemy(mut commands: Commands, textures: Res<TextureAssets>) {
+fn spawn_enemy(mut commands: Commands) {
     let mut rng = rand::thread_rng();
 
     for _ in 0..10 {
@@ -35,8 +38,19 @@ fn spawn_enemy(mut commands: Commands, textures: Res<TextureAssets>) {
                 ..Default::default()
             })
             .insert(Enemy)
-            .insert(PlayerControlled {
-                velocity: Vec3::ZERO,
-            });
+            .insert(Velocity(Vec3::ZERO))
+            .insert(DynamicCollider {
+                size: Vec2::splat(UNIT),
+            })
+            .insert(DelayedPlayerController);
+    }
+}
+
+fn update_enemy_velocity(
+    mut enemy_velocity_query: Query<&mut Velocity, (With<Enemy>, Without<Player>)>,
+    mut player_velocity_history: ResMut<PlayerVelocityHistory>,
+) {
+    for mut enemy_velocity in enemy_velocity_query.iter_mut() {
+        enemy_velocity.0 = player_velocity_history.get();
     }
 }

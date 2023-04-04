@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use rand::Rng;
 
+use crate::components::*;
 use crate::config::*;
 use crate::loading::LdtkLevelAssets;
 use crate::GameState;
@@ -10,9 +11,7 @@ use crate::GameState;
 pub struct EnvironmentPlugin;
 
 #[derive(Component)]
-pub struct Wall {
-    pub size: Vec2,
-}
+pub struct Wall;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
@@ -56,7 +55,8 @@ fn spawn_walls(mut commands: Commands) {
                 transform: Transform::from_translation(position),
                 ..Default::default()
             },
-            Wall { size },
+            Wall,
+            StaticCollider { size },
         ));
     }
 }
