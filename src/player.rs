@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::actions::Actions;
 use crate::components::*;
 use crate::config::*;
@@ -10,13 +12,88 @@ pub struct PlayerPlugin;
 /// Player logic is only active during the State `GameState::Playing`
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(PlayerVelocityHistory::new(50))
+        app.add_event::<FootstepEvent>()
+            .register_type::<Footstep>()
+            .insert_resource(FootstepTimer(Timer::new(
+                Duration::from_secs_f32(FOOTSTEP_INTERVAL),
+                TimerMode::Repeating,
+            )))
+            .insert_resource(PlayerVelocityHistory::new(70))
             .add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
             .add_system(update_camera.in_schedule(OnEnter(GameState::Playing)))
             .add_systems(
-                (update_player_velocity, update_camera, rotate_player)
+                (
+                    footsteps,
+                    update_player_velocity,
+                    update_camera,
+                    rotate_player,
+                )
                     .in_set(OnUpdate(GameState::Playing)),
             );
+    }
+}
+
+#[derive(Resource)]
+struct FootstepTimer(Timer);
+
+#[derive(Component, Reflect)]
+struct Footstep {
+    age: f32,
+    max_age: f32,
+}
+
+pub struct FootstepEvent;
+
+fn footsteps(
+    mut commands: Commands,
+    player_query: Query<(&Transform, &Velocity), With<Player>>,
+    mut footstep_query: Query<(Entity, &mut Footstep, &mut Sprite)>,
+    mut timer: ResMut<FootstepTimer>,
+    mut events: EventWriter<FootstepEvent>,
+    time: Res<Time>,
+) {
+    let (player_transform, player_velocity) = player_query.single();
+    let player_speed = player_velocity.0.length();
+
+    // Distance between footsteps
+    let interval = FOOTSTEP_INTERVAL * (20. - player_speed).max(0.11);
+    timer.0.set_duration(Duration::from_secs_f32(interval));
+    timer.0.tick(time.delta());
+
+    // Footstep age
+    for (entity, mut footstep, mut sprite) in &mut footstep_query {
+        footstep.age += time.delta_seconds();
+
+        sprite.color.set_a(1. - footstep.age / footstep.max_age);
+
+        if footstep.age >= footstep.max_age {
+            commands.entity(entity).despawn();
+        }
+    }
+
+    // Spawn new footsteps
+    if player_speed > 0.1 && timer.0.just_finished() {
+        events.send(FootstepEvent);
+
+        commands.spawn((
+            Footstep {
+                age: 0.,
+                max_age: FOOTSTEP_MAX_AGE,
+            },
+            SpriteBundle {
+                sprite: Sprite {
+                    color: Color::BLACK,
+                    custom_size: Some(Vec2::splat(3.)),
+                    ..default()
+                },
+                transform: Transform::from_translation(Vec3 {
+                    x: player_transform.translation.x,
+                    y: player_transform.translation.y,
+                    z: player_transform.translation.z - 1.,
+                }),
+                ..Default::default()
+            },
+        ));
     }
 }
 
