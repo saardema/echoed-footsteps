@@ -18,13 +18,13 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=bevy_game",
-                    "--package=bevy_game",
+                    "--bin=echoed_footsteps",
+                    "--package=echoed_footsteps",
                     "--features",
                     "dev"
                 ],
                 "filter": {
-                    "name": "bevy_game",
+                    "name": "echoed_footsteps",
                     "kind": "bin"
                 },
             },
@@ -47,13 +47,13 @@
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=bevy_game",
-                    "--package=bevy_game",
+                    "--bin=echoed_footsteps",
+                    "--package=echoed_footsteps",
                     "--features",
                     "dev"
                 ],
                 "filter": {
-                    "name": "bevy_game",
+                    "name": "echoed_footsteps",
                     "kind": "bin"
                 }
             },
