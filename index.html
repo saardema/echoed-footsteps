@@ -1,11 +1,11 @@
 <!DOCTYPE html><html lang="en"><head>
-        <meta charset="utf-8">
-        <title>Bevy game</title> <!-- ToDo -->
-        
-        
-        
-        <link rel="icon" href="icon.ico">
-        <style type="text/css">body, html {
+    <meta charset="utf-8">
+    <title>Echoed Footsteps</title>
+    
+    
+    
+    <link rel="icon" href="icon.ico">
+    <style type="text/css">body, html {
     height: 100%;
 }
 
@@ -39,11 +39,12 @@ body {
     outline: none;
 }
 </style>
-    
-<link rel="preload" href="/echoed-footsteps/bevy_game-f44888d3334f213d_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-<link rel="modulepreload" href="/echoed-footsteps/bevy_game-f44888d3334f213d.js"></head>
-    <body>
-        <script>// Insert hack to make sound autoplay on Chrome as soon as the user interacts with the tab:
+
+<link rel="preload" href="/echoed-footsteps/echoed_footsteps-3e0932fa4da4fcc4_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/echoed-footsteps/echoed_footsteps-3e0932fa4da4fcc4.js"></head>
+
+<body>
+    <script>// Insert hack to make sound autoplay on Chrome as soon as the user interacts with the tab:
 // https://developers.google.com/web/updates/2018/11/web-audio-autoplay#moving-forward
 
 // the following function keeps track of all AudioContexts and resumes them on the first user
@@ -106,11 +107,12 @@ body {
     });
 })();
 </script>
-        <div class="game-container">
-            <canvas id="bevy">
-                Javascript and support for canvas is required
-            </canvas>
-        </div>
-    
+    <div class="game-container">
+        <canvas id="bevy">
+            Javascript and support for canvas is required
+        </canvas>
+    </div>
 
-<script type="module">import init from '/echoed-footsteps/bevy_game-f44888d3334f213d.js';init('/echoed-footsteps/bevy_game-f44888d3334f213d_bg.wasm');</script></body></html>
+
+
+<script type="module">import init from '/echoed-footsteps/echoed_footsteps-3e0932fa4da4fcc4.js';init('/echoed-footsteps/echoed_footsteps-3e0932fa4da4fcc4_bg.wasm');</script></body></html>
