@@ -17,8 +17,8 @@ impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(LdtkPlugin)
             .insert_resource(LevelSelection::Index(0))
-            .add_system(setup_level.in_schedule(OnEnter(GameState::Playing)));
-        // .add_system(spawn_walls.in_schedule(OnEnter(GameState::Playing)));
+            .add_system(setup_level.in_schedule(OnEnter(GameState::Playing)))
+            .add_system(spawn_walls.in_schedule(OnEnter(GameState::Playing)));
     }
 }
 

@@ -24,8 +24,8 @@ fn spawn_enemy(mut commands: Commands) {
     let mut rng = rand::thread_rng();
 
     for _ in 0..10 {
-        let x: f32 = rng.gen_range(-200.0..200.0);
-        let y: f32 = rng.gen_range(-200.0..200.0);
+        let x: f32 = rng.gen_range(-80.0..80.0);
+        let y: f32 = rng.gen_range(-80.0..80.0);
 
         commands
             .spawn(SpriteBundle {
