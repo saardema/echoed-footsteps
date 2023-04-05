@@ -10,10 +10,12 @@ pub struct PlayerPlugin;
 /// Player logic is only active during the State `GameState::Playing`
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(PlayerVelocityHistory::new(100))
+        app.insert_resource(PlayerVelocityHistory::new(50))
             .add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
+            .add_system(update_camera.in_schedule(OnEnter(GameState::Playing)))
             .add_systems(
-                (update_player_velocity, update_camera).in_set(OnUpdate(GameState::Playing)),
+                (update_player_velocity, update_camera, rotate_player)
+                    .in_set(OnUpdate(GameState::Playing)),
             );
     }
 }
@@ -67,7 +69,7 @@ fn spawn_player(mut commands: Commands) {
         .spawn(SpriteBundle {
             sprite: Sprite {
                 color: Color::GREEN,
-                custom_size: Some(Vec2::splat(UNIT)),
+                custom_size: Some(Vec2::new(UNIT, UNIT / 2.)),
                 ..default()
             },
             transform: Transform::from_translation(Vec3::new(0., 0., 30.)),
@@ -103,4 +105,11 @@ fn update_player_velocity(
     player_velocity.0 += velocity_difference * acceleration * time.delta_seconds();
 
     player_velocity_history.set(player_velocity.0);
+}
+
+fn rotate_player(mut player_query: Query<(&mut Transform, &Velocity), With<Player>>) {
+    if let Ok((mut transform, velocity)) = player_query.get_single_mut() {
+        transform.rotation =
+            Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
+    }
 }

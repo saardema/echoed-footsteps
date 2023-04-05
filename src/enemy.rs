@@ -16,7 +16,9 @@ pub struct DelayedPlayerController;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(spawn_enemy.in_schedule(OnEnter(GameState::Playing)))
-            .add_system(update_enemy_velocity.in_set(OnUpdate(GameState::Playing)));
+            .add_systems(
+                (update_enemy_velocity, rotate_enemy).in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 
@@ -24,14 +26,14 @@ fn spawn_enemy(mut commands: Commands) {
     let mut rng = rand::thread_rng();
 
     for _ in 0..10 {
-        let x: f32 = rng.gen_range(-80.0..80.0);
-        let y: f32 = rng.gen_range(-80.0..80.0);
+        let x: f32 = rng.gen_range(-180.0..180.0);
+        let y: f32 = rng.gen_range(-180.0..180.0);
 
         commands
             .spawn(SpriteBundle {
                 sprite: Sprite {
                     color: Color::RED,
-                    custom_size: Some(Vec2::splat(UNIT)),
+                    custom_size: Some(Vec2::new(UNIT, UNIT / 2.)),
                     ..default()
                 },
                 transform: Transform::from_translation(Vec3::new(x, y, 20.)),
@@ -52,5 +54,12 @@ fn update_enemy_velocity(
 ) {
     for mut enemy_velocity in enemy_velocity_query.iter_mut() {
         enemy_velocity.0 = player_velocity_history.get();
+    }
+}
+
+fn rotate_enemy(mut enemy_query: Query<(&mut Transform, &Velocity), With<Enemy>>) {
+    for (mut transform, velocity) in enemy_query.iter_mut() {
+        transform.rotation =
+            Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
     }
 }

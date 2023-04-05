@@ -29,17 +29,17 @@ fn start_audio(mut commands: Commands, audio_assets: Res<AudioAssets>, audio: Re
     audio.pause();
     let handle = audio
         .play(audio_assets.footsteps.clone())
-        // .start_from(4.65)
+        .start_from(3.8)
         .handle();
     commands.insert_resource(FootstepsAudio(handle));
 }
 
 fn control_footstep_sound(
-    actions: Res<Actions>,
     footsteps_audio: Res<FootstepsAudio>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut player_velocity_query: Query<&Velocity, With<Player>>,
 ) {
+    return;
     if let Some(footsteps_instance) = audio_instances.get_mut(&footsteps_audio.0) {
         let player_velocity = player_velocity_query.single_mut();
         let volume = (player_velocity.0.length() / 30.).min(1.);
@@ -55,39 +55,5 @@ fn control_footstep_sound(
                 footsteps_instance.seek_to(0.65);
             }
         }
-        // footsteps_instance.resume(AudioTween::linear(Duration::from_secs_f32(0.5)));
-        // match footsteps_instance.state() {
-        //     PlaybackState::Paused { .. } => {
-        //         if actions.player_movement.is_some() {
-        //             footsteps_instance.resume(AudioTween::default());
-        //         }
-        //     }
-        //     PlaybackState::Playing { .. } => {
-        //         if actions.player_movement.is_none() {
-        //             footsteps_instance.pause(AudioTween::default());
-        //         }
-        //     }
-        //     _ => {}
-        // }
     }
-}
-
-fn play_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    audio
-        .play(asset_server.load("background_audio.ogg"))
-        // The first 0.5 seconds will not be looped and are the "intro"
-        .loop_from(0.5)
-        // Fade-in with a dynamic easing
-        .fade_in(AudioTween::new(
-            Duration::from_secs(2),
-            AudioEasing::OutPowi(2),
-        ))
-        // Only play on our right ear
-        .with_panning(1.0)
-        // Increase playback rate by 50% (this also increases the pitch)
-        .with_playback_rate(1.5)
-        // Play at half volume
-        .with_volume(0.5)
-        // play the track reversed
-        .reverse();
 }
