@@ -1,3 +1,4 @@
+use std::f32::consts::FRAC_PI_2;
 use std::time::Duration;
 
 use crate::components::*;
@@ -77,8 +78,16 @@ fn update_enemy_velocity(
 
 fn rotate_enemy(mut enemy_query: Query<(&mut Transform, &Velocity), With<Enemy>>) {
     for (mut transform, velocity) in enemy_query.iter_mut() {
-        transform.rotation =
-            Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
+        if velocity.0.length() > 0. {
+            transform.rotation = Quat::from_euler(
+                EulerRot::XYZ,
+                0.,
+                0.,
+                -(velocity.0.x / velocity.0.y)
+                    .atan()
+                    .clamp(-FRAC_PI_2, FRAC_PI_2),
+            );
+        }
     }
 }
 

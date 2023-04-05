@@ -4,6 +4,7 @@ mod components;
 mod config;
 mod enemy;
 mod environment;
+mod hud;
 mod loading;
 mod menu;
 mod physics;

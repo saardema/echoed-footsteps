@@ -1,3 +1,4 @@
+use std::f32::consts::FRAC_PI_2;
 use std::time::Duration;
 
 use crate::actions::Actions;
@@ -13,24 +14,20 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<FootstepEvent>()
-            .register_type::<Footstep>()
+            .insert_resource(PlayerState::default())
             .insert_resource(FootstepTimer(Timer::new(
                 Duration::from_secs_f32(FOOTSTEP_INTERVAL),
                 TimerMode::Repeating,
             )))
             .insert_resource(PlayerVelocityHistory::new(70))
-            .add_system(spawn_player.in_schedule(OnEnter(GameState::Playing)))
-            .add_system(update_camera.in_schedule(OnEnter(GameState::Playing)))
-            .add_systems(
-                (
-                    footsteps,
-                    update_player_velocity,
-                    update_camera,
-                    rotate_player,
-                )
-                    .in_set(OnUpdate(GameState::Playing)),
-            );
+            .add_systems((spawn_player, update_camera).in_schedule(OnEnter(GameState::Playing)))
+            .add_systems((footsteps, update_velocity, rotate).in_set(OnUpdate(GameState::Playing)));
     }
+}
+
+#[derive(Resource, Default)]
+pub struct PlayerState {
+    pub hp: f32,
 }
 
 #[derive(Resource)]
@@ -82,7 +79,7 @@ fn footsteps(
     let player_speed = player_velocity.0.length();
 
     // Distance between footsteps
-    let interval = FOOTSTEP_INTERVAL * (20. - player_speed).max(0.11);
+    let interval = FOOTSTEP_INTERVAL * (15. - player_speed).max(0.11);
     timer.0.set_duration(Duration::from_secs_f32(interval));
     timer.0.tick(time.delta());
 
@@ -159,7 +156,7 @@ fn spawn_player(mut commands: Commands) {
         });
 }
 
-fn update_player_velocity(
+fn update_velocity(
     time: Res<Time>,
     actions: Res<Actions>,
     mut player_velocity_history: ResMut<PlayerVelocityHistory>,
@@ -184,9 +181,11 @@ fn update_player_velocity(
     player_velocity_history.set(player_velocity.0);
 }
 
-fn rotate_player(mut player_query: Query<(&mut Transform, &Velocity), With<Player>>) {
+fn rotate(mut player_query: Query<(&mut Transform, &Velocity), With<Player>>) {
     if let Ok((mut transform, velocity)) = player_query.get_single_mut() {
-        transform.rotation =
-            Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
+        if velocity.0.length() > 0. {
+            transform.rotation =
+                Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
+        }
     }
 }
