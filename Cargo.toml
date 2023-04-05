@@ -39,6 +39,7 @@ winit = { version = "0.28", default-features = false }
 image = { version = "0.24", default-features = false }
 bevy_ecs_ldtk = {version="0.6.0", features=["atlas"]}
 bevy-inspector-egui = "0.18.3"
+bevy_mod_raycast = "0.8.0"
 
 [build-dependencies]
 embed-resource = "1.4"

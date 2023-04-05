@@ -44,6 +44,32 @@ struct Footstep {
 
 pub struct FootstepEvent;
 
+#[derive(Resource)]
+pub struct PlayerVelocityHistory {
+    velocities: Vec<Vec3>,
+    size: usize,
+    pointer: usize,
+}
+
+impl PlayerVelocityHistory {
+    fn new(size: usize) -> Self {
+        Self {
+            velocities: vec![Vec3::ZERO; size],
+            size: size,
+            pointer: 0,
+        }
+    }
+
+    pub fn get(&mut self) -> Vec3 {
+        self.velocities[(self.pointer + 1) % self.size]
+    }
+
+    fn set(&mut self, velocity: Vec3) {
+        self.velocities[self.pointer] = velocity;
+        self.pointer = (self.pointer + 1) % self.size;
+    }
+}
+
 fn footsteps(
     mut commands: Commands,
     player_query: Query<(&Transform, &Velocity), With<Player>>,
@@ -94,32 +120,6 @@ fn footsteps(
                 ..Default::default()
             },
         ));
-    }
-}
-
-#[derive(Resource)]
-pub struct PlayerVelocityHistory {
-    velocities: Vec<Vec3>,
-    size: usize,
-    pointer: usize,
-}
-
-impl PlayerVelocityHistory {
-    fn new(size: usize) -> Self {
-        Self {
-            velocities: vec![Vec3::ZERO; size],
-            size: size,
-            pointer: 0,
-        }
-    }
-
-    pub fn get(&mut self) -> Vec3 {
-        self.velocities[(self.pointer + 1) % self.size]
-    }
-
-    fn set(&mut self, velocity: Vec3) {
-        self.velocities[self.pointer] = velocity;
-        self.pointer = (self.pointer + 1) % self.size;
     }
 }
 
