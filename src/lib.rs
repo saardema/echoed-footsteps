@@ -19,6 +19,8 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+#[cfg(debug_assertions)]
+use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 use enemy::EnemyPlugin;
 use environment::EnvironmentPlugin;
 use physics::PhysicsPlugin;
@@ -53,7 +55,9 @@ impl Plugin for GamePlugin {
 
         #[cfg(debug_assertions)]
         {
-            app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+            app
+                // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+                .add_plugin(WorldInspectorPlugin::default())
                 .add_plugin(LogDiagnosticsPlugin::default());
         }
     }
