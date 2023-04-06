@@ -26,8 +26,8 @@ impl Plugin for LoadingPlugin {
 
 #[derive(AssetCollection, Resource)]
 pub struct LdtkLevelAssets {
-    #[asset(path = "levels/level01.ldtk")]
-    pub level01: Handle<LdtkAsset>,
+    #[asset(path = "levels/level02.ldtk")]
+    pub level: Handle<LdtkAsset>,
 }
 #[derive(AssetCollection, Resource)]
 pub struct FontAssets {
