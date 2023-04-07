@@ -6,6 +6,7 @@ use crate::config::*;
 use crate::enemy::EnemyBundle;
 use crate::environment::Goal;
 use crate::environment::Wall;
+use crate::loading::TextureAssets;
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
@@ -22,10 +23,8 @@ impl Plugin for PlayerPlugin {
                 Duration::from_secs_f32(FOOTSTEP_INTERVAL),
                 TimerMode::Repeating,
             )))
-            // .register_ldtk_entity::<PlayerBundle>("LdtkPlayer")
             .insert_resource(PlayerVelocityHistory::new(50))
             .add_system(spawn_ldtk_entities)
-            .add_system(init_camera.in_schedule(OnEnter(GameState::Playing)))
             .add_systems((footsteps, update_velocity, rotate).in_set(OnUpdate(GameState::Playing)));
     }
 }
@@ -114,13 +113,14 @@ fn footsteps(
     mut footstep_query: Query<(Entity, &mut Footstep, &mut Sprite)>,
     mut timer: ResMut<FootstepTimer>,
     mut events: EventWriter<FootstepEvent>,
+    textures: Res<TextureAssets>,
     time: Res<Time>,
 ) {
     if let Ok((mut player, player_transform, player_velocity)) = player_query.get_single_mut() {
         let player_speed = player_velocity.0.length();
 
         // Distance between footsteps
-        let interval = FOOTSTEP_INTERVAL * (15. - player_speed).max(0.11);
+        let interval = FOOTSTEP_INTERVAL * (10. - player_speed).max(0.11);
         timer.0.set_duration(Duration::from_secs_f32(interval));
         timer.0.tick(time.delta());
 
@@ -144,7 +144,7 @@ fn footsteps(
             let mut transform = player_transform.clone();
             transform.translation.z -= 1.;
             transform.translation +=
-                transform.local_x() * (if player.used_left_foot { 7. } else { -7. });
+                transform.local_x() * (if player.used_left_foot { 5. } else { -5. });
 
             commands.spawn((
                 Footstep {
@@ -152,9 +152,11 @@ fn footsteps(
                     max_age: FOOTSTEP_MAX_AGE,
                 },
                 SpriteBundle {
+                    texture: textures.footstep.clone(),
                     sprite: Sprite {
-                        color: Color::BLACK,
-                        custom_size: Some(Vec2::new(3., 9.)),
+                        color: Color::rgb(0.8, 0.8, 1.0),
+                        flip_x: !player.used_left_foot,
+                        custom_size: Some(Vec2::splat(20.)),
                         ..default()
                     },
                     transform,
@@ -163,24 +165,6 @@ fn footsteps(
             ));
         }
     }
-}
-
-fn init_camera(mut query: Query<&mut Transform, With<Camera>>) {
-    let mut transform = query.single_mut();
-
-    *transform = Transform {
-        translation: Vec3 {
-            x: WINDOW_WIDTH / 2. + UNIT,
-            y: WINDOW_HEIGHT / 2. + UNIT,
-            z: 999.,
-        },
-        scale: Vec3 {
-            x: 1.,
-            y: 1.,
-            z: 1.,
-        },
-        ..default()
-    };
 }
 
 fn spawn_ldtk_entities(
@@ -258,8 +242,7 @@ fn update_velocity(
 fn rotate(mut player_query: Query<(&mut Transform, &Velocity), With<Player>>) {
     if let Ok((mut transform, velocity)) = player_query.get_single_mut() {
         if velocity.0.length() > 0. {
-            transform.rotation =
-                Quat::from_euler(EulerRot::XYZ, 0., 0., -(velocity.0.x / velocity.0.y).atan());
+            transform.rotation = Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize());
         }
     }
 }

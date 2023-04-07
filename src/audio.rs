@@ -29,11 +29,11 @@ fn on_footstep(
         if player.used_left_foot {
             audio
                 .play(audio_assets.footstep_03.clone())
-                .with_volume(0.3);
+                .with_volume(0.0);
         } else {
             audio
                 .play(audio_assets.footstep_01.clone())
-                .with_volume(0.3);
+                .with_volume(0.0);
         }
     }
 }

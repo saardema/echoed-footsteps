@@ -11,7 +11,7 @@ pub const SPEED: f32 = 600.;
 
 // Footsteps
 pub const FOOTSTEP_INTERVAL: f32 = 0.02;
-pub const FOOTSTEP_MAX_AGE: f32 = 5.;
+pub const FOOTSTEP_MAX_AGE: f32 = 7.;
 
 pub const COLOR1: Color = Color::rgb(125. / 256., 185. / 256., 182. / 256.);
 pub const COLOR2: Color = Color::rgb(245. / 256., 344. / 256., 207. / 256.);

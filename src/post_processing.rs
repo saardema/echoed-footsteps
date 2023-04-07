@@ -19,10 +19,15 @@ use bevy::{
     sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle},
 };
 
-fn main() {
-    App::new()
-        .add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
-        .add_startup_system(setup)
+use crate::config::*;
+
+pub struct PostProcessingPlugin;
+
+impl Plugin for PostProcessingPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
+            .add_startup_system(setup);
+    }
 }
 
 /// Marks the first camera cube (rendered to a texture.)
@@ -38,8 +43,8 @@ fn setup(
     mut images: ResMut<Assets<Image>>,
 ) {
     let size = Extent3d {
-        width: WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
+        width: WINDOW_WIDTH as u32,
+        height: WINDOW_HEIGHT as u32,
         ..default()
     };
 
@@ -76,8 +81,12 @@ fn setup(
                 target: RenderTarget::Image(image_handle.clone()),
                 ..default()
             },
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 15.0))
-                .looking_at(Vec3::default(), Vec3::Y),
+            transform: Transform::from_translation(Vec3 {
+                x: WINDOW_WIDTH / 2. + UNIT,
+                y: WINDOW_HEIGHT / 2. + UNIT,
+                z: 999.,
+            }),
+            // .looking_at(Vec3::default(), Vec3::Y),
             ..default()
         },
         // Disable UI rendering for the first pass camera. This prevents double rendering of UI at
@@ -120,7 +129,12 @@ fn setup(
                 order: 1,
                 ..default()
             },
-            ..Camera2dBundle::default()
+            // transform: Transform::from_translation(Vec3 {
+            //     x: WINDOW_WIDTH / 2. + UNIT,
+            //     y: WINDOW_HEIGHT / 2. + UNIT,
+            //     z: 999.,
+            // }),
+            ..default()
         },
         post_processing_pass_layer,
     ));

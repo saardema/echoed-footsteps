@@ -9,6 +9,7 @@ mod loading;
 mod menu;
 mod physics;
 mod player;
+mod post_processing;
 
 use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
@@ -26,6 +27,7 @@ use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 use enemy::EnemyPlugin;
 use environment::EnvironmentPlugin;
 use physics::PhysicsPlugin;
+use post_processing::PostProcessingPlugin;
 
 // This example game uses States to separate logic
 // See https://bevy-cheatbook.github.io/programming/states.html
@@ -54,6 +56,7 @@ impl Plugin for GamePlugin {
             .add_plugin(EnemyPlugin)
             .add_plugin(EnvironmentPlugin)
             .add_plugin(PlayerPlugin)
+            .add_plugin(PostProcessingPlugin)
             .add_plugin(PhysicsPlugin);
 
         #[cfg(debug_assertions)]
