@@ -4,6 +4,7 @@ use crate::actions::Actions;
 use crate::components::*;
 use crate::config::*;
 use crate::enemy::EnemyBundle;
+use crate::environment::Goal;
 use crate::environment::Wall;
 use crate::GameState;
 use bevy::prelude::*;
@@ -22,15 +23,17 @@ impl Plugin for PlayerPlugin {
                 TimerMode::Repeating,
             )))
             // .register_ldtk_entity::<PlayerBundle>("LdtkPlayer")
-            .insert_resource(PlayerVelocityHistory::new(70))
-            .add_system(process_my_entity)
+            .insert_resource(PlayerVelocityHistory::new(50))
+            .add_system(spawn_ldtk_entities)
             .add_system(init_camera.in_schedule(OnEnter(GameState::Playing)))
             .add_systems((footsteps, update_velocity, rotate).in_set(OnUpdate(GameState::Playing)));
     }
 }
 
 #[derive(Component, Default)]
-pub struct Player;
+pub struct Player {
+    pub used_left_foot: bool,
+}
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -43,14 +46,16 @@ pub struct PlayerBundle {
 impl PlayerBundle {
     fn new(position: Vec3) -> Self {
         Self {
-            player: Player,
+            player: Player {
+                used_left_foot: false,
+            },
             velocity: Velocity::default(),
             collider: DynamicCollider {
                 size: Vec2::splat(UNIT),
             },
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::GREEN,
+                    color: COLOR5,
                     custom_size: Some(Vec2::new(UNIT, UNIT / 2.)),
                     ..default()
                 },
@@ -93,8 +98,8 @@ impl PlayerVelocityHistory {
         }
     }
 
-    pub fn get(&mut self) -> Vec3 {
-        self.velocities[(self.pointer + 1) % self.size]
+    pub fn get(&mut self, offset: usize) -> Vec3 {
+        self.velocities[(self.pointer + 1 + offset) % self.size]
     }
 
     fn set(&mut self, velocity: Vec3) {
@@ -105,13 +110,13 @@ impl PlayerVelocityHistory {
 
 fn footsteps(
     mut commands: Commands,
-    player_query: Query<(&Transform, &Velocity), With<Player>>,
+    mut player_query: Query<(&mut Player, &Transform, &Velocity)>,
     mut footstep_query: Query<(Entity, &mut Footstep, &mut Sprite)>,
     mut timer: ResMut<FootstepTimer>,
     mut events: EventWriter<FootstepEvent>,
     time: Res<Time>,
 ) {
-    if let Ok((player_transform, player_velocity)) = player_query.get_single() {
+    if let Ok((mut player, player_transform, player_velocity)) = player_query.get_single_mut() {
         let player_speed = player_velocity.0.length();
 
         // Distance between footsteps
@@ -134,6 +139,13 @@ fn footsteps(
         if player_speed > 0.1 && timer.0.just_finished() {
             events.send(FootstepEvent);
 
+            player.used_left_foot = !player.used_left_foot;
+
+            let mut transform = player_transform.clone();
+            transform.translation.z -= 1.;
+            transform.translation +=
+                transform.local_x() * (if player.used_left_foot { 7. } else { -7. });
+
             commands.spawn((
                 Footstep {
                     age: 0.,
@@ -142,14 +154,10 @@ fn footsteps(
                 SpriteBundle {
                     sprite: Sprite {
                         color: Color::BLACK,
-                        custom_size: Some(Vec2::splat(3.)),
+                        custom_size: Some(Vec2::new(3., 9.)),
                         ..default()
                     },
-                    transform: Transform::from_translation(Vec3 {
-                        x: player_transform.translation.x,
-                        y: player_transform.translation.y,
-                        z: player_transform.translation.z - 1.,
-                    }),
+                    transform,
                     ..Default::default()
                 },
             ));
@@ -162,8 +170,8 @@ fn init_camera(mut query: Query<&mut Transform, With<Camera>>) {
 
     *transform = Transform {
         translation: Vec3 {
-            x: WINDOW_WIDTH / 2.,
-            y: WINDOW_HEIGHT / 2.,
+            x: WINDOW_WIDTH / 2. + UNIT,
+            y: WINDOW_HEIGHT / 2. + UNIT,
             z: 999.,
         },
         scale: Vec3 {
@@ -175,23 +183,39 @@ fn init_camera(mut query: Query<&mut Transform, With<Camera>>) {
     };
 }
 
-fn process_my_entity(
+fn spawn_ldtk_entities(
     mut commands: Commands,
     entity_query: Query<(Entity, &Transform, &EntityInstance), Added<EntityInstance>>,
 ) {
     for (entity, transform, entity_instance) in entity_query.iter() {
         let mut position = transform.translation.clone();
+
         if entity_instance.identifier == *"PlayerSpawner" {
             position.z = 30.;
             commands.spawn(PlayerBundle::new(position));
         } else if entity_instance.identifier == *"EnemySpawner" {
+            position.z = 20.;
             commands.spawn(EnemyBundle::new(position));
+        } else if entity_instance.identifier == *"Goal" {
+            position.z = 10.;
+            commands.spawn((
+                Goal,
+                SpriteBundle {
+                    sprite: Sprite {
+                        color: COLOR1,
+                        custom_size: Some(Vec2::splat(UNIT)),
+                        ..default()
+                    },
+                    transform: Transform::from_translation(position),
+                    ..Default::default()
+                },
+            ));
         } else if entity_instance.identifier == *"WallSpawner" {
             let size = Vec2::new(transform.scale.x, transform.scale.y) * UNIT;
             commands.spawn((
                 SpriteBundle {
                     sprite: Sprite {
-                        color: Color::BLUE,
+                        color: COLOR8,
                         custom_size: Some(size),
                         ..default()
                     },

@@ -3,17 +3,21 @@ use std::time::Duration;
 
 use crate::components::*;
 use crate::config::*;
+use crate::environment::Wall;
 use crate::player::Player;
 use crate::player::PlayerVelocityHistory;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy::sprite::collide_aabb::collide;
 use rand::Rng;
 
 pub struct EnemyPlugin;
 
 #[derive(Component, Default)]
 pub struct Enemy {
-    timer: Timer,
+    shoot_timer: Timer,
+    offset: usize,
+    can_see_player: bool,
 }
 
 impl Plugin for EnemyPlugin {
@@ -22,7 +26,8 @@ impl Plugin for EnemyPlugin {
             (
                 update_enemy_velocity,
                 rotate_enemy,
-                shoot,
+                projectile_hit,
+                // shoot,
                 update_projectiles,
             )
                 .in_set(OnUpdate(GameState::Playing)),
@@ -46,9 +51,15 @@ pub struct EnemyBundle {
 
 impl EnemyBundle {
     pub fn new(position: Vec3) -> Self {
+        let mut rng = rand::thread_rng();
+        let mut shoot_timer = Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating);
+        shoot_timer.set_elapsed(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
+
         Self {
             enemy: Enemy {
-                timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                shoot_timer,
+                offset: rng.gen_range(0..50),
+                can_see_player: true,
             },
             velocity: Velocity::default(),
             collider: DynamicCollider {
@@ -56,7 +67,7 @@ impl EnemyBundle {
             },
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::RED,
+                    color: COLOR6,
                     custom_size: Some(Vec2::new(UNIT, UNIT / 2.)),
                     ..default()
                 },
@@ -68,11 +79,11 @@ impl EnemyBundle {
 }
 
 fn update_enemy_velocity(
-    mut enemy_velocity_query: Query<&mut Velocity, With<Enemy>>,
+    mut enemy_velocity_query: Query<(&mut Velocity, &Enemy)>,
     mut player_velocity_history: ResMut<PlayerVelocityHistory>,
 ) {
-    for mut enemy_velocity in enemy_velocity_query.iter_mut() {
-        enemy_velocity.0 = player_velocity_history.get();
+    for (mut enemy_velocity, enemy) in enemy_velocity_query.iter_mut() {
+        enemy_velocity.0 = player_velocity_history.get(enemy.offset);
     }
 }
 
@@ -111,15 +122,15 @@ fn update_projectiles(
 
 fn shoot(
     mut commands: Commands,
-    mut query: Query<(&Transform, &mut Enemy)>,
+    mut enemy_query: Query<(&Transform, &mut Enemy)>,
     time: Res<Time>,
     player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
 ) {
     if let Ok(player_transform) = player_query.get_single() {
-        for (transform, mut enemy) in query.iter_mut() {
-            enemy.timer.tick(time.delta());
+        for (transform, mut enemy) in enemy_query.iter_mut() {
+            enemy.shoot_timer.tick(time.delta());
 
-            if enemy.timer.just_finished() {
+            if enemy.shoot_timer.just_finished() && enemy.can_see_player {
                 commands.spawn((
                     Projectile {
                         direction: (player_transform.translation - transform.translation)
@@ -139,7 +150,31 @@ fn shoot(
                         }),
                         ..Default::default()
                     },
+                    DynamicCollider {
+                        size: Vec2::splat(2.),
+                    },
                 ));
+            }
+        }
+    }
+}
+
+fn projectile_hit(
+    mut commands: Commands,
+    walls: Query<(&StaticCollider, &Transform), With<Wall>>,
+    projectiles: Query<(Entity, &DynamicCollider, &Transform), With<Projectile>>,
+) {
+    for (w_collider, w_transform) in walls.iter() {
+        for (entity, p_collider, p_transform) in projectiles.iter() {
+            let collision = collide(
+                w_transform.translation,
+                w_collider.size,
+                p_transform.translation,
+                p_collider.size,
+            );
+
+            if let Some(collision) = collision {
+                commands.entity(entity).despawn();
             }
         }
     }

@@ -1,5 +1,5 @@
 use crate::loading::AudioAssets;
-use crate::player::FootstepEvent;
+use crate::player::{FootstepEvent, Player};
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
@@ -22,17 +22,18 @@ fn on_footstep(
     audio_assets: Res<AudioAssets>,
     audio: Res<Audio>,
     mut events: EventReader<FootstepEvent>,
+    player_query: Query<&Player>,
 ) {
     for _ in events.iter() {
-        let choice = rand::thread_rng().gen_range(1..=3);
-        let mut handle = audio_assets.footstep_01.clone();
-
-        if choice == 2 {
-            handle = audio_assets.footstep_02.clone();
-        } else if choice == 3 {
-            handle = audio_assets.footstep_03.clone();
+        let player = player_query.single();
+        if player.used_left_foot {
+            audio
+                .play(audio_assets.footstep_03.clone())
+                .with_volume(0.3);
+        } else {
+            audio
+                .play(audio_assets.footstep_01.clone())
+                .with_volume(0.3);
         }
-
-        audio.play(handle).with_volume(0.3);
     }
 }

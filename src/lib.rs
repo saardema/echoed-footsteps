@@ -60,7 +60,7 @@ impl Plugin for GamePlugin {
         {
             app
                 // .add_plugin(FrameTimeDiagnosticsPlugin::default())
-                .add_plugin(WorldInspectorPlugin::default())
+                // .add_plugin(WorldInspectorPlugin::default())
                 .add_plugin(LogDiagnosticsPlugin::default());
         }
     }
