@@ -3,7 +3,6 @@ use crate::player::{FootstepEvent, Player};
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
-use rand::Rng;
 
 pub struct InternalAudioPlugin;
 
@@ -29,11 +28,11 @@ fn on_footstep(
         if player.used_left_foot {
             audio
                 .play(audio_assets.footstep_03.clone())
-                .with_volume(0.0);
+                .with_volume(0.7);
         } else {
             audio
                 .play(audio_assets.footstep_01.clone())
-                .with_volume(0.0);
+                .with_volume(0.7);
         }
     }
 }

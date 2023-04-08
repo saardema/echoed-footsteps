@@ -4,7 +4,10 @@
 //! edge detection, blur, pixelization, vignette... and countless others.
 
 use bevy::{
-    core_pipeline::clear_color::ClearColorConfig,
+    core_pipeline::{
+        bloom::{BloomPrefilterSettings, BloomSettings},
+        tonemapping::Tonemapping,
+    },
     prelude::*,
     reflect::TypeUuid,
     render::{
@@ -36,10 +39,8 @@ struct MainCube;
 
 fn setup(
     mut commands: Commands,
-    windows: Query<&Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut post_processing_materials: ResMut<Assets<PostProcessingMaterial>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
 ) {
     let size = Extent3d {
@@ -127,13 +128,21 @@ fn setup(
             camera: Camera {
                 // renders after the first main camera which has default value: 0.
                 order: 1,
+                hdr: true,
                 ..default()
             },
-            // transform: Transform::from_translation(Vec3 {
-            //     x: WINDOW_WIDTH / 2. + UNIT,
-            //     y: WINDOW_HEIGHT / 2. + UNIT,
-            //     z: 999.,
-            // }),
+            tonemapping: Tonemapping::TonyMcMapface,
+            ..default()
+        },
+        BloomSettings {
+            intensity: 0.56,
+            low_frequency_boost: 0.42,
+            low_frequency_boost_curvature: 0.76,
+            high_pass_frequency: 0.57,
+            prefilter_settings: BloomPrefilterSettings {
+                threshold: 0.04,
+                threshold_softness: 1.12,
+            },
             ..default()
         },
         post_processing_pass_layer,

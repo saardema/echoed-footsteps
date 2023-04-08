@@ -43,6 +43,10 @@ pub struct AudioAssets {
     pub footstep_02: Handle<AudioSource>,
     #[asset(path = "audio/footstep_03.ogg")]
     pub footstep_03: Handle<AudioSource>,
+    #[asset(path = "audio/hit_wall.wav")]
+    pub hit_wall: Handle<AudioSource>,
+    #[asset(path = "audio/laser_shoot.wav")]
+    pub laser_shoot: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]

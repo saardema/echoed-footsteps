@@ -24,7 +24,6 @@ impl Plugin for PlayerPlugin {
                 TimerMode::Repeating,
             )))
             .insert_resource(PlayerVelocityHistory::new(50))
-            .add_system(spawn_ldtk_entities)
             .add_systems((footsteps, update_velocity, rotate).in_set(OnUpdate(GameState::Playing)));
     }
 }
@@ -43,7 +42,7 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    fn new(position: Vec3) -> Self {
+    pub fn new(position: Vec3) -> Self {
         Self {
             player: Player {
                 used_left_foot: false,
@@ -142,7 +141,7 @@ fn footsteps(
             player.used_left_foot = !player.used_left_foot;
 
             let mut transform = player_transform.clone();
-            transform.translation.z -= 1.;
+            transform.translation.z = 5.;
             transform.translation +=
                 transform.local_x() * (if player.used_left_foot { 5. } else { -5. });
 
@@ -154,7 +153,7 @@ fn footsteps(
                 SpriteBundle {
                     texture: textures.footstep.clone(),
                     sprite: Sprite {
-                        color: Color::rgb(0.8, 0.8, 1.0),
+                        color: COLOR5,
                         flip_x: !player.used_left_foot,
                         custom_size: Some(Vec2::splat(20.)),
                         ..default()
@@ -162,52 +161,6 @@ fn footsteps(
                     transform,
                     ..Default::default()
                 },
-            ));
-        }
-    }
-}
-
-fn spawn_ldtk_entities(
-    mut commands: Commands,
-    entity_query: Query<(Entity, &Transform, &EntityInstance), Added<EntityInstance>>,
-) {
-    for (entity, transform, entity_instance) in entity_query.iter() {
-        let mut position = transform.translation.clone();
-
-        if entity_instance.identifier == *"PlayerSpawner" {
-            position.z = 30.;
-            commands.spawn(PlayerBundle::new(position));
-        } else if entity_instance.identifier == *"EnemySpawner" {
-            position.z = 20.;
-            commands.spawn(EnemyBundle::new(position));
-        } else if entity_instance.identifier == *"Goal" {
-            position.z = 10.;
-            commands.spawn((
-                Goal,
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: COLOR1,
-                        custom_size: Some(Vec2::splat(UNIT)),
-                        ..default()
-                    },
-                    transform: Transform::from_translation(position),
-                    ..Default::default()
-                },
-            ));
-        } else if entity_instance.identifier == *"WallSpawner" {
-            let size = Vec2::new(transform.scale.x, transform.scale.y) * UNIT;
-            commands.spawn((
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: COLOR8,
-                        custom_size: Some(size),
-                        ..default()
-                    },
-                    transform: Transform::from_translation(position),
-                    ..Default::default()
-                },
-                Wall,
-                StaticCollider { size },
             ));
         }
     }

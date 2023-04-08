@@ -24,5 +24,11 @@ fn fragment(
         1.0
     );
 
+    if (uv.y % 0.001 > 0.0005) {
+        output_color.r -= 0.01;
+        output_color.g -= 0.01;
+        output_color.b -= 0.01;
+    }
+
     return output_color;
 }

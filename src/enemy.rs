@@ -4,11 +4,14 @@ use std::time::Duration;
 use crate::components::*;
 use crate::config::*;
 use crate::environment::Wall;
+use crate::loading::AudioAssets;
 use crate::player::Player;
 use crate::player::PlayerVelocityHistory;
 use crate::GameState;
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
+use bevy_kira_audio::Audio;
+use bevy_kira_audio::AudioControl;
 use rand::Rng;
 
 pub struct EnemyPlugin;
@@ -27,7 +30,7 @@ impl Plugin for EnemyPlugin {
                 update_enemy_velocity,
                 rotate_enemy,
                 projectile_hit,
-                // shoot,
+                shoot,
                 update_projectiles,
             )
                 .in_set(OnUpdate(GameState::Playing)),
@@ -52,7 +55,10 @@ pub struct EnemyBundle {
 impl EnemyBundle {
     pub fn new(position: Vec3) -> Self {
         let mut rng = rand::thread_rng();
-        let mut shoot_timer = Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating);
+        let mut shoot_timer = Timer::new(
+            Duration::from_secs_f32(rng.gen_range(2.8..3.2)),
+            TimerMode::Repeating,
+        );
         shoot_timer.set_elapsed(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
 
         Self {
@@ -90,14 +96,7 @@ fn update_enemy_velocity(
 fn rotate_enemy(mut enemy_query: Query<(&mut Transform, &Velocity), With<Enemy>>) {
     for (mut transform, velocity) in enemy_query.iter_mut() {
         if velocity.0.length() > 0. {
-            transform.rotation = Quat::from_euler(
-                EulerRot::XYZ,
-                0.,
-                0.,
-                -(velocity.0.x / velocity.0.y)
-                    .atan()
-                    .clamp(-FRAC_PI_2, FRAC_PI_2),
-            );
+            transform.rotation = Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize());
         }
     }
 }
@@ -125,12 +124,18 @@ fn shoot(
     mut enemy_query: Query<(&Transform, &mut Enemy)>,
     time: Res<Time>,
     player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+    audio: Res<Audio>,
+    audio_assets: Res<AudioAssets>,
 ) {
     if let Ok(player_transform) = player_query.get_single() {
         for (transform, mut enemy) in enemy_query.iter_mut() {
             enemy.shoot_timer.tick(time.delta());
 
             if enemy.shoot_timer.just_finished() && enemy.can_see_player {
+                audio
+                    .play(audio_assets.laser_shoot.clone())
+                    .with_volume(0.1);
+
                 commands.spawn((
                     Projectile {
                         direction: (player_transform.translation - transform.translation)
@@ -163,6 +168,8 @@ fn projectile_hit(
     mut commands: Commands,
     walls: Query<(&StaticCollider, &Transform), With<Wall>>,
     projectiles: Query<(Entity, &DynamicCollider, &Transform), With<Projectile>>,
+    audio: Res<Audio>,
+    audio_assets: Res<AudioAssets>,
 ) {
     for (w_collider, w_transform) in walls.iter() {
         for (entity, p_collider, p_transform) in projectiles.iter() {
@@ -173,7 +180,8 @@ fn projectile_hit(
                 p_collider.size,
             );
 
-            if let Some(collision) = collision {
+            if collision.is_some() {
+                audio.play(audio_assets.hit_wall.clone()).with_volume(0.1);
                 commands.entity(entity).despawn();
             }
         }
