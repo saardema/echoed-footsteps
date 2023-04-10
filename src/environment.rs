@@ -5,7 +5,9 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::components::*;
 use crate::config::*;
 use crate::enemy::EnemyBundle;
+use crate::enemy::Projectile;
 use crate::loading::LdtkLevelAssets;
+use crate::player::Footstep;
 use crate::player::PlayerBundle;
 use crate::GameState;
 
@@ -13,7 +15,7 @@ pub struct EnvironmentPlugin;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(LevelSelection::Index(0))
+        app.insert_resource(LevelSelection::Index(1))
             .insert_resource(ClearColor(Color::rgb(0.04, 0.04, 0.1)))
             .insert_resource(LdtkSettings {
                 level_background: LevelBackground::Nonexistent,
@@ -96,10 +98,20 @@ fn setup_level(
 fn spawn_ldtk_entities(
     mut commands: Commands,
     entity_query: Query<(Entity, &Transform, &EntityInstance), Added<EntityInstance>>,
+    projectiles: Query<Entity, With<Projectile>>,
+    footsteps: Query<Entity, With<Footstep>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (entity, transform, entity_instance) in entity_query.iter() {
+        for entity in &projectiles {
+            commands.entity(entity).despawn();
+        }
+
+        for entity in &footsteps {
+            commands.entity(entity).despawn();
+        }
+
         let mut position = transform.translation.clone();
 
         if entity_instance.identifier == *"PlayerSpawner" {

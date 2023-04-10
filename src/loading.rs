@@ -49,6 +49,10 @@ pub struct AudioAssets {
     pub laser_shoot: Handle<AudioSource>,
     #[asset(path = "audio/level_complete.wav")]
     pub level_complete: Handle<AudioSource>,
+    #[asset(path = "audio/hit_hurt.wav")]
+    pub hit_hurt: Handle<AudioSource>,
+    #[asset(path = "audio/explosion.wav")]
+    pub explosion: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]

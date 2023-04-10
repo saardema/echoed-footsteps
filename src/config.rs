@@ -8,6 +8,7 @@ pub const UNIT: f32 = 16.;
 pub const ACCELERATION: f32 = 2.;
 pub const DECELERATION: f32 = 10.;
 pub const SPEED: f32 = 600.;
+pub const HISTORY_LENGTH: usize = 50;
 
 // Footsteps
 pub const FOOTSTEP_INTERVAL: f32 = 0.02;

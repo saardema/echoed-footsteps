@@ -3,11 +3,14 @@ use std::time::Duration;
 use crate::actions::Actions;
 use crate::components::*;
 use crate::config::*;
+use crate::enemy::Projectile;
 use crate::environment::Goal;
 use crate::loading::AudioAssets;
 use crate::loading::TextureAssets;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy::sprite::collide_aabb::collide;
+use bevy_ecs_ldtk::LevelSelection;
 use bevy_kira_audio::Audio;
 use bevy_kira_audio::AudioControl;
 
@@ -18,14 +21,22 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<FootstepEvent>()
+            .add_event::<SetLevelEvent>()
             .insert_resource(PlayerState::default())
             .insert_resource(FootstepTimer(Timer::new(
                 Duration::from_secs_f32(FOOTSTEP_INTERVAL),
                 TimerMode::Repeating,
             )))
-            .insert_resource(PlayerVelocityHistory::new(50))
+            .insert_resource(PlayerVelocityHistory::new(HISTORY_LENGTH))
             .add_systems(
-                (footsteps, update_velocity, rotate, level_complete)
+                (
+                    footsteps,
+                    update_velocity,
+                    rotate,
+                    set_level,
+                    level_complete,
+                    player_hit,
+                )
                     .in_set(OnUpdate(GameState::Playing)),
             );
     }
@@ -76,7 +87,7 @@ pub struct PlayerState {
 struct FootstepTimer(Timer);
 
 #[derive(Component, Reflect)]
-struct Footstep {
+pub struct Footstep {
     age: f32,
     max_age: f32,
 }
@@ -227,5 +238,54 @@ fn rotate(mut player_query: Query<(&mut Transform, &Velocity), With<Player>>) {
         if velocity.0.length() > 0. {
             transform.rotation = Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize());
         }
+    }
+}
+
+fn player_hit(
+    projectile_query: Query<(&Transform, &DynamicCollider), With<Projectile>>,
+    mut player_query: Query<(&Transform, &DynamicCollider, &mut Velocity), With<Player>>,
+    mut level_selection: ResMut<LevelSelection>,
+    mut events: EventWriter<SetLevelEvent>,
+) {
+    for (player_transform, player_collider, mut velocity) in player_query.iter_mut() {
+        for (projectile_transform, projectile_collider) in projectile_query.iter() {
+            if collide(
+                player_transform.translation,
+                player_collider.size,
+                projectile_transform.translation,
+                projectile_collider.size,
+            )
+            .is_some()
+            {
+                match *level_selection {
+                    LevelSelection::Index(i) => events.send(SetLevelEvent(i)),
+                    _ => {}
+                }
+
+                match *level_selection {
+                    LevelSelection::Index(i) => *level_selection = LevelSelection::Index(0),
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
+struct SetLevelEvent(usize);
+
+fn set_level(
+    mut velocity: Query<&mut Velocity, With<Player>>,
+    mut events: EventReader<SetLevelEvent>,
+    mut level_selection: ResMut<LevelSelection>,
+    mut player_velocity_history: ResMut<PlayerVelocityHistory>,
+) {
+    for e in events.iter() {
+        for mut velocity in velocity.iter_mut() {
+            velocity.0 = Vec3::ZERO;
+        }
+
+        *player_velocity_history = PlayerVelocityHistory::new(HISTORY_LENGTH);
+
+        *level_selection = LevelSelection::Index(e.0);
     }
 }

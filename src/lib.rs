@@ -26,6 +26,7 @@ use bevy_ecs_ldtk::LdtkPlugin;
 use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 use enemy::EnemyPlugin;
 use environment::EnvironmentPlugin;
+use hud::HudPlugin;
 use physics::PhysicsPlugin;
 use post_processing::PostProcessingPlugin;
 

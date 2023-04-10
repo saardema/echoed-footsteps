@@ -1,4 +1,3 @@
-use std::f32::consts::FRAC_PI_2;
 use std::time::Duration;
 
 use crate::components::*;
@@ -31,6 +30,7 @@ impl Plugin for EnemyPlugin {
                 rotate_enemy,
                 projectile_hit,
                 shoot,
+                enemy_squash,
                 can_see_player,
                 update_projectiles,
             )
@@ -40,7 +40,7 @@ impl Plugin for EnemyPlugin {
 }
 
 #[derive(Component)]
-struct Projectile {
+pub struct Projectile {
     direction: Vec3,
     speed: f32,
 }
@@ -106,6 +106,8 @@ fn update_projectiles(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Transform, &Projectile)>,
     time: Res<Time>,
+    audio: Res<Audio>,
+    audio_assets: Res<AudioAssets>,
 ) {
     for (entity, mut transform, projectile) in query.iter_mut() {
         transform.translation += projectile.direction * projectile.speed * time.delta_seconds();
@@ -115,6 +117,7 @@ fn update_projectiles(
             || transform.translation.y > WINDOW_HEIGHT
             || transform.translation.y < 0.
         {
+            audio.play(audio_assets.hit_wall.clone()).with_volume(0.1);
             commands.entity(entity).despawn();
         }
     }
@@ -136,34 +139,36 @@ fn can_see_player(
         let mut traveled = Vec3::ZERO;
         enemy.can_see_player = false;
 
-        while traveled.length() < local_max_distance {
-            for (collider, collider_transform) in static_collider_query.iter() {
+        'outer: loop {
+            while traveled.length() < local_max_distance {
+                for (collider, collider_transform) in static_collider_query.iter() {
+                    if collide(
+                        traveled + enemy_transform.translation,
+                        check_size,
+                        collider_transform.translation,
+                        collider.size,
+                    )
+                    .is_some()
+                    {
+                        enemy.can_see_player = false;
+                        break 'outer;
+                    }
+                }
+
                 if collide(
                     traveled + enemy_transform.translation,
                     check_size,
-                    collider_transform.translation,
-                    collider.size,
+                    player_transform.translation,
+                    player_collider.size,
                 )
                 .is_some()
                 {
-                    // enemy.can_see_player = false;
-                    return;
+                    enemy.can_see_player = true;
+                    break 'outer;
                 }
-            }
 
-            if collide(
-                traveled + enemy_transform.translation,
-                check_size,
-                player_transform.translation,
-                player_collider.size,
-            )
-            .is_some()
-            {
-                enemy.can_see_player = true;
-                return;
+                traveled += step;
             }
-
-            traveled += step;
         }
     }
 }
@@ -233,6 +238,32 @@ fn projectile_hit(
                 audio.play(audio_assets.hit_wall.clone()).with_volume(0.1);
                 commands.entity(entity).despawn();
             }
+        }
+    }
+}
+
+fn enemy_squash(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, &DynamicCollider), With<Enemy>>,
+    audio: Res<Audio>,
+    audio_assets: Res<AudioAssets>,
+) {
+    let combinations = query.iter_combinations();
+
+    for [(entity, transform, collider), (other_entity, other_transform, other_collider)] in
+        combinations
+    {
+        if collide(
+            transform.translation,
+            collider.size,
+            other_transform.translation,
+            other_collider.size,
+        )
+        .is_some()
+        {
+            audio.play(audio_assets.explosion.clone()).with_volume(0.2);
+            commands.entity(entity).despawn();
+            commands.entity(other_entity).despawn();
         }
     }
 }
