@@ -39,8 +39,20 @@ enum GameState {
     Loading,
     // During this State the actual game logic is executed
     Playing,
+    // Level complete screen
+    LevelComplete,
     // Here the menu is drawn and waiting for player interaction
     Menu,
+}
+
+#[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
+enum LevelState {
+    // During the loading State the LoadingPlugin will load our assets
+    #[default]
+    Playing,
+    // During this State the actual game logic is executed
+    Complete,
+    // Here the menu is drawn and waiting for player interaction
 }
 
 pub struct GamePlugin;

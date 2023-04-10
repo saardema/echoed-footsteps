@@ -74,10 +74,6 @@ fn setup(
     // Main camera, first to render
     commands.spawn((
         Camera2dBundle {
-            // camera_3d: Camera3d {
-            //     clear_color: ClearColorConfig::Custom(Color::WHITE),
-            //     ..default()
-            // },
             camera: Camera {
                 target: RenderTarget::Image(image_handle.clone()),
                 ..default()
@@ -87,7 +83,6 @@ fn setup(
                 y: WINDOW_HEIGHT / 2. + UNIT,
                 z: 999.,
             }),
-            // .looking_at(Vec3::default(), Vec3::Y),
             ..default()
         },
         // Disable UI rendering for the first pass camera. This prevents double rendering of UI at

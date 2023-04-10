@@ -31,6 +31,7 @@ impl Plugin for EnemyPlugin {
                 rotate_enemy,
                 projectile_hit,
                 shoot,
+                can_see_player,
                 update_projectiles,
             )
                 .in_set(OnUpdate(GameState::Playing)),
@@ -65,7 +66,7 @@ impl EnemyBundle {
             enemy: Enemy {
                 shoot_timer,
                 offset: rng.gen_range(0..50),
-                can_see_player: true,
+                can_see_player: false,
             },
             velocity: Velocity::default(),
             collider: DynamicCollider {
@@ -115,6 +116,54 @@ fn update_projectiles(
             || transform.translation.y < 0.
         {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn can_see_player(
+    player_query: Query<(&Transform, &DynamicCollider), With<Player>>,
+    mut enemy_query: Query<(&Transform, &mut Enemy)>,
+    static_collider_query: Query<(&StaticCollider, &Transform), With<Wall>>,
+) {
+    let Ok((player_transform, player_collider)) = player_query.get_single() else { return; };
+    let max_distance: f32 = 1000.;
+    let check_size = Vec2::splat(UNIT);
+
+    for (enemy_transform, mut enemy) in enemy_query.iter_mut() {
+        let direction = player_transform.translation - enemy_transform.translation;
+        let local_max_distance = max_distance.min(direction.length());
+        let step = direction.normalize() * UNIT;
+        let mut traveled = Vec3::ZERO;
+        enemy.can_see_player = false;
+
+        while traveled.length() < local_max_distance {
+            for (collider, collider_transform) in static_collider_query.iter() {
+                if collide(
+                    traveled + enemy_transform.translation,
+                    check_size,
+                    collider_transform.translation,
+                    collider.size,
+                )
+                .is_some()
+                {
+                    // enemy.can_see_player = false;
+                    return;
+                }
+            }
+
+            if collide(
+                traveled + enemy_transform.translation,
+                check_size,
+                player_transform.translation,
+                player_collider.size,
+            )
+            .is_some()
+            {
+                enemy.can_see_player = true;
+                return;
+            }
+
+            traveled += step;
         }
     }
 }

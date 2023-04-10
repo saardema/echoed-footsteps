@@ -24,7 +24,8 @@ fn on_footstep(
     player_query: Query<&Player>,
 ) {
     for _ in events.iter() {
-        let player = player_query.single();
+        let Ok(player) = player_query.get_single() else {return;};
+
         if player.used_left_foot {
             audio
                 .play(audio_assets.footstep_03.clone())

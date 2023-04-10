@@ -31,8 +31,8 @@ pub struct LdtkLevelAssets {
 }
 #[derive(AssetCollection, Resource)]
 pub struct FontAssets {
-    #[asset(path = "fonts/FiraSans-Bold.ttf")]
-    pub fira_sans: Handle<Font>,
+    #[asset(path = "fonts/pixeboy.ttf")]
+    pub pixeboy: Handle<Font>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -47,6 +47,8 @@ pub struct AudioAssets {
     pub hit_wall: Handle<AudioSource>,
     #[asset(path = "audio/laser_shoot.wav")]
     pub laser_shoot: Handle<AudioSource>,
+    #[asset(path = "audio/level_complete.wav")]
+    pub level_complete: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]

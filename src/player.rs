@@ -3,13 +3,13 @@ use std::time::Duration;
 use crate::actions::Actions;
 use crate::components::*;
 use crate::config::*;
-use crate::enemy::EnemyBundle;
 use crate::environment::Goal;
-use crate::environment::Wall;
+use crate::loading::AudioAssets;
 use crate::loading::TextureAssets;
 use crate::GameState;
 use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
+use bevy_kira_audio::Audio;
+use bevy_kira_audio::AudioControl;
 
 pub struct PlayerPlugin;
 
@@ -24,7 +24,10 @@ impl Plugin for PlayerPlugin {
                 TimerMode::Repeating,
             )))
             .insert_resource(PlayerVelocityHistory::new(50))
-            .add_systems((footsteps, update_velocity, rotate).in_set(OnUpdate(GameState::Playing)));
+            .add_systems(
+                (footsteps, update_velocity, rotate, level_complete)
+                    .in_set(OnUpdate(GameState::Playing)),
+            );
     }
 }
 
@@ -119,7 +122,7 @@ fn footsteps(
         let player_speed = player_velocity.0.length();
 
         // Distance between footsteps
-        let interval = FOOTSTEP_INTERVAL * (10. - player_speed).max(0.11);
+        let interval = FOOTSTEP_INTERVAL * (15. - player_speed).max(0.11);
         timer.0.set_duration(Duration::from_secs_f32(interval));
         timer.0.tick(time.delta());
 
@@ -127,7 +130,9 @@ fn footsteps(
         for (entity, mut footstep, mut sprite) in &mut footstep_query {
             footstep.age += time.delta_seconds();
 
-            sprite.color.set_a(1. - footstep.age / footstep.max_age);
+            sprite
+                .color
+                .set_a(0.5 - footstep.age / footstep.max_age / 2.);
 
             if footstep.age >= footstep.max_age {
                 commands.entity(entity).despawn();
@@ -135,7 +140,7 @@ fn footsteps(
         }
 
         // Spawn new footsteps
-        if player_speed > 0.1 && timer.0.just_finished() {
+        if player_speed > 2.0 && timer.0.just_finished() {
             events.send(FootstepEvent);
 
             player.used_left_foot = !player.used_left_foot;
@@ -162,6 +167,31 @@ fn footsteps(
                     ..Default::default()
                 },
             ));
+        }
+    }
+}
+
+fn level_complete(
+    goal_query: Query<&Transform, With<Goal>>,
+    mut player_query: Query<(&Transform, &mut Velocity), With<Player>>,
+    mut state: ResMut<NextState<GameState>>,
+    audio_assets: Res<AudioAssets>,
+    audio: Res<Audio>,
+    mut player_velocity_history: ResMut<PlayerVelocityHistory>,
+) {
+    if let Ok((player, mut velocity)) = player_query.get_single_mut() {
+        if let Ok(goal) = goal_query.get_single() {
+            let distance = goal.translation - player.translation;
+
+            if distance.length() < UNIT * 2. {
+                velocity.0 = Vec3::ZERO;
+                *player_velocity_history = PlayerVelocityHistory::new(50);
+                state.set(GameState::LevelComplete);
+
+                audio
+                    .play(audio_assets.level_complete.clone())
+                    .with_volume(0.2);
+            }
         }
     }
 }
