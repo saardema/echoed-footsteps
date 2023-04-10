@@ -1,5 +1,6 @@
 use crate::config::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::loading::FontAssets;
+use crate::player::SetLevelEvent;
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::LevelSelection;
@@ -20,6 +21,8 @@ impl Plugin for MenuPlugin {
             .add_system(animate_level_complete_screen.in_set(OnUpdate(GameState::LevelComplete)))
             .add_system(setup_menu.in_schedule(OnEnter(GameState::Menu)))
             .add_system(click_play_button.in_set(OnUpdate(GameState::Menu)))
+            .add_system(spawn_instructions.in_schedule(OnEnter(GameState::Playing)))
+            .add_system(instructions.in_set(OnUpdate(GameState::Playing)))
             .add_system(cleanup_menu.in_schedule(OnExit(GameState::Menu)))
             .add_system(cleanup_menu.in_schedule(OnExit(GameState::LevelComplete)))
             .add_system(init_level_complete_screen.in_schedule(OnEnter(GameState::LevelComplete)));
@@ -120,16 +123,10 @@ fn cleanup_menu(
     }
 }
 
-fn init_level_complete_screen(mut commands: Commands, font_assets: Res<FontAssets>) {
-    // commands.spawn(TextBundle::from_section(
-    //     "Level Complete!",
-    //     TextStyle {
-    //         font: font_assets.pixeboy.clone(),
-    //         font_size: 60.0,
-    //         color: Color::rgb(0.9, 0.9, 0.9),
-    //     },
-    // ));
+#[derive(Component)]
+struct LevelCompleteText;
 
+fn init_level_complete_screen(mut commands: Commands, font_assets: Res<FontAssets>) {
     commands
         .spawn(Text2dBundle {
             text: Text::from_section(
@@ -147,15 +144,17 @@ fn init_level_complete_screen(mut commands: Commands, font_assets: Res<FontAsset
             WINDOW_WIDTH / 2.,
             WINDOW_HEIGHT / 2.,
             1.,
-        ));
+        ))
+        .insert(LevelCompleteText);
 }
 
 fn animate_level_complete_screen(
-    mut text_query: Query<&mut Visibility, With<Text>>,
+    mut text_query: Query<&mut Visibility, With<LevelCompleteText>>,
     mut next_level_state: ResMut<NextLevelState>,
     mut state: ResMut<NextState<GameState>>,
     mut level_selection: ResMut<LevelSelection>,
     time: Res<Time>,
+    mut events: EventWriter<SetLevelEvent>,
 ) {
     next_level_state.delay_timer.tick(time.delta());
     next_level_state.flash_timer.tick(time.delta());
@@ -172,17 +171,68 @@ fn animate_level_complete_screen(
     }
 
     if next_level_state.delay_timer.just_finished() {
+        next_level_state.delay_timer.reset();
         match *level_selection {
             LevelSelection::Index(i) => *level_selection = LevelSelection::Index(i + 1),
             _ => {}
         }
+
+        // match *level_selection {
+        //     LevelSelection::Index(i) => events.send(SetLevelEvent(i + 1)),
+        //     _ => {}
+        // }
+
         state.set(GameState::Playing);
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 struct NextLevelState {
     delay_timer: Timer,
     flash_timer: Timer,
     flash_on: bool,
+}
+
+#[derive(Component)]
+pub struct InfoText;
+
+pub fn spawn_instructions(mut commands: Commands, font_assets: Res<FontAssets>) {
+    commands
+        .spawn(Text2dBundle {
+            text: Text::from_section(
+                "",
+                TextStyle {
+                    font: font_assets.pixeboy.clone(),
+                    font_size: 20.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                },
+            )
+            .with_alignment(TextAlignment::Center),
+            ..default()
+        })
+        .insert(Transform::from_xyz(
+            WINDOW_WIDTH / 2.,
+            WINDOW_HEIGHT / 8.,
+            1.,
+        ))
+        .insert(InfoText);
+}
+
+pub fn instructions(level: Res<LevelSelection>, mut text: Query<&mut Text, With<InfoText>>) {
+    let mut instruction = "";
+
+    if level.is_changed() {
+        match *level {
+            LevelSelection::Index(1) => {
+                instruction =
+                    "1. Enemies follow your footsteps \n2. Enemies die when they hit eachother\n3. Make your way to the green goal"
+            }
+            LevelSelection::Index(2) => instruction = "Don't get shot!",
+            _ => {}
+        }
+
+        for mut text in text.iter_mut() {
+            text.sections[0].value = instruction.to_owned();
+        }
+    }
 }

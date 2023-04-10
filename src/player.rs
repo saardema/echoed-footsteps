@@ -201,7 +201,7 @@ fn level_complete(
 
                 audio
                     .play(audio_assets.level_complete.clone())
-                    .with_volume(0.2);
+                    .with_volume(0.1);
             }
         }
     }
@@ -246,6 +246,8 @@ fn player_hit(
     mut player_query: Query<(&Transform, &DynamicCollider, &mut Velocity), With<Player>>,
     mut level_selection: ResMut<LevelSelection>,
     mut events: EventWriter<SetLevelEvent>,
+    audio_assets: Res<AudioAssets>,
+    audio: Res<Audio>,
 ) {
     for (player_transform, player_collider, mut velocity) in player_query.iter_mut() {
         for (projectile_transform, projectile_collider) in projectile_query.iter() {
@@ -257,6 +259,8 @@ fn player_hit(
             )
             .is_some()
             {
+                audio.play(audio_assets.hit_hurt.clone()).with_volume(0.2);
+
                 match *level_selection {
                     LevelSelection::Index(i) => events.send(SetLevelEvent(i)),
                     _ => {}
@@ -271,7 +275,7 @@ fn player_hit(
     }
 }
 
-struct SetLevelEvent(usize);
+pub struct SetLevelEvent(pub usize);
 
 fn set_level(
     mut velocity: Query<&mut Velocity, With<Player>>,

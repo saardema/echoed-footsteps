@@ -14,7 +14,7 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     // Get screen position with coordinates from 0 to 1
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
-    let offset_strength = 0.002;
+    let offset_strength = 0.0015;
 
     // Sample each color channel with an arbitrary shift
     var output_color = vec4<f32>(

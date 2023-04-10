@@ -57,7 +57,7 @@ impl EnemyBundle {
     pub fn new(position: Vec3) -> Self {
         let mut rng = rand::thread_rng();
         let mut shoot_timer = Timer::new(
-            Duration::from_secs_f32(rng.gen_range(2.8..3.2)),
+            Duration::from_secs_f32(rng.gen_range(1.8..2.2)),
             TimerMode::Repeating,
         );
         shoot_timer.set_elapsed(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
